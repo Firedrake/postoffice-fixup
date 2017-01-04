@@ -1,0 +1,70 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use PDF::API2;
+use POSIX qw(strftime);
+use Getopt::Std;
+
+my %o;
+getopt('odwv',\%o);
+if ($o{v}) {
+  $o{v}=sprintf('%.2f',$o{v});
+}
+(my $date=strftime('%d %B %Y',localtime)) =~ s/^0+//;
+
+my $pdf=PDF::API2->open($ARGV[0]) or die "no input file\n";
+
+my $page=$pdf->openpage(1);
+my $text=$page->text;
+my $gfx=$page->gfx;
+my $fn=$pdf->corefont('Helvetica');
+
+$text->font($fn,20);
+
+$text->save;
+$text->translate(300,40);
+$text->text($o{o});
+$text->restore;
+
+$text->save;
+$text->translate(300,20);
+$text->text($date);
+$text->restore;
+
+if ($o{d}) {
+  my $customs=PDF::API2->open('CN22.pdf');
+  my $xo=$pdf->importPageIntoForm($customs,1);
+  $gfx->formimage($xo,300,559,1);
+  $text->font($fn,12);
+  $text->save;
+  $text->translate(310,737);
+  $text->text($o{d});
+  $text->restore;
+  $text->save;
+  $text->translate(435,737);
+  $text->text($o{w});
+  $text->restore;
+  $text->save;
+  $text->translate(475,737);
+  $text->text("\xa3".$o{v});
+  $text->restore;
+  $text->save;
+  $text->translate(435,650);
+  $text->text($o{w});
+  $text->restore;
+  $text->save;
+  $text->translate(475,650);
+  $text->text("\xa3".$o{v});
+  $text->restore;
+  $text->save;
+  $text->translate(466,599);
+  $text->text(strftime('%Y-%m-%d',localtime));
+  $text->restore;
+}
+
+(my $out=$ARGV[0]) =~ s/(\.pdf)$/.processed$1/;
+if ($out ne $ARGV[0]) {
+  $pdf->saveas($out);
+}
